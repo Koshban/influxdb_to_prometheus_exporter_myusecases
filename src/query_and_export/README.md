@@ -1,6 +1,6 @@
 # InfluxDB to Prometheus Exporter in export_and_expose.py
 
-This Python script regularly executes queries on InfluxDB, converts the results into Prometheus metrics, and exposes these metrics via a Prometheus HTTP server. 
+This Python script regularly executes queries on InfluxDB, converts the results into Prometheus metrics, and exposes these metrics via a Prometheus HTTP server.
 
 ## Dependencies
 
