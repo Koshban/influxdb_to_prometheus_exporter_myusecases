@@ -1,5 +1,5 @@
 """ Classes for creating UDP or TCP Connections """
-import VSC.influxdb_to_prometheus_exporter_myusecases.common.exporterconfig as exporterconfig
+import exporterconfig
 import socket
 
 """ UDPConn"""

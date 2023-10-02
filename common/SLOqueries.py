@@ -17,5 +17,9 @@ queries = {
         "query": "SELECT field2 FROM measurement2",
         "frequency": 600  # 600 seconds = 10 minutes
     },
+    "mean": {
+        "query" : 'SELECT mean("usage") FROM "cpu" WHERE time >= now() - 1h GROUP BY time(10m)',
+        "frequency": 1500
+    },
     # Add more queries here...
 }
