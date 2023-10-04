@@ -37,7 +37,13 @@ class TCPConn:
         self.sock.close()
 
 """ InfluxDB Conn """
-influxdbconn = (exporterconfig.host, exporterconfig.port, exporterconfig.username, exporterconfig.password, exporterconfig.database )
+influxdbconn = (host=exporterconfig.host, 
+                port=exporterconfig.port, 
+                username=exporterconfig.username, 
+                password=exporterconfig.password, 
+                database=exporterconfig.database, 
+                ssl=exporterconfig.ssl.lower() in ('true', '1', 'yes'), 
+                verify_ssl=exporterconfig.verify_ssl.lower() in ('true', '1', 'yes') )
 
 """ Usage """
 """

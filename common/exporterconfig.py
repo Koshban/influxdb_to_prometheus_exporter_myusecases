@@ -6,6 +6,11 @@ port = int(os.environ.get('PORT', '18087'))
 username = os.environ.get('USERNAME', 'your_username')
 password = os.environ.get('PASSWORD', 'your_password')
 database = os.environ.get('DATABASE', 'your_database')
+# To create secure connections
+ssl = os.environ.get('INFLUXDB_SSL', True)
+verify_ssl = os.environ.get('INFLUXDB_VERIFY_SSL', True)
+os.environ['REQUESTS_CA_BUNDLE'] = 'PATH' # The actual absolute .pem file path
+
 prometheus_pushgateway_url = os.environ.get('PROMETHEUS_PUSHGATEWAY_URL', 'http://localhost:9091/metrics/job/my_job')
 prometheusport = int(os.environ.get('PROMETHEUS_PORT', '8080'))
 
