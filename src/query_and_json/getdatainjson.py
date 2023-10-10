@@ -5,7 +5,13 @@ import json
 import common.connections as connections
 
 # Configure query and execution frequency
-query = 'from(bucket:"measurements") |> range(start: -1h) |> filter(fn: (r) => r._measurement == "gilgo") |> percentile(column: "value", percentile: 0.95)'
+query = '''
+from(bucket: "default")
+  |> range(start: 1695907248642ms, stop: 1695916384594ms)
+  |> filter(fn: (r) => r._measurement == "talon" and r.region =~ /^USS/ and r.latencyType == "client.update.message.loadAndSend")
+  |> keep(columns: ["95tile", "messageType"])
+  |> group(columns: ["messageType"])
+'''
 execution_frequency = 900  # 900 seconds = 15 minutes
 
 # Connect to InfluxDB
