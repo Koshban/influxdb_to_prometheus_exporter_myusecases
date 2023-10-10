@@ -2,10 +2,12 @@ import os
 
 # Set default values for the variables
 host = os.environ.get('HOST', 'localhost')
-port = int(os.environ.get('PORT', '18087'))
+port = int(os.environ.get('PORT', '18086'))
 username = os.environ.get('USERNAME', 'your_username')
 password = os.environ.get('PASSWORD', 'your_password')
-database = os.environ.get('DATABASE', 'your_database')
+org = os.environ.get('DATABASE', 'your_database')
+url = os.environ.get('INFLUXURL', 'https://localhost:18086/')
+token = os.environ.get('INFLUX_TOKEN', '')
 # To create secure connections
 ssl = os.environ.get('INFLUXDB_SSL', True)
 verify_ssl = os.environ.get('INFLUXDB_VERIFY_SSL', True)
