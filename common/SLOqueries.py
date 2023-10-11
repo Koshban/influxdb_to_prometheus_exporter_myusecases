@@ -25,33 +25,18 @@ queries = {
 }
 
 flux_query = '''
-f = (r) => 
-  r._measurement == "measurement.Talon" and 
-  r._field == "value" and 
-  r.metricName == "external.release.response.time" and 
-  r.operation == "create" and 
-  r.region == "ASIA"
-
-data = from(bucket: "two_weeks_only")
-  |> range(start: -12h)
-  |> filter(fn: f)
-
-minQuery = data
-  |> aggregateWindow(every: 15m, fn: min, createEmpty: false)
-
-maxQuery = data
-  |> aggregateWindow(every: 15m, fn: max, createEmpty: false)
-
-avgQuery = data
-  |> aggregateWindow(every: 15m, fn: mean, createEmpty: false)
-
-p90Query = data
-  |> window(every: 15m)
-  |> quantile(column: "_value", q: 0.9)
-
-p95Query = data
-  |> window(every: 15m)
-  |> quantile(column: "_value", q: 0.95)
-
-union(tables: [minQuery, maxQuery, avgQuery, p90Query, p95Query])
+from(bucket: "two_weeks_only")
+  |> range(start: -7d)
+  |> filter(fn: (r) => 
+      r._measurement == "measurement.Talon" and 
+      r._field == "sampleSize" and 
+      (r.region == "ASIA" or r.region == "EMEA" or r.region == "US") and
+      r.flow == "kafka.equity.order.gateway.inbound" and
+      r.measurementType == "cumulativeTime" and
+      r.action == "completed" and
+      (r.messageType == "NewOrder" or r.messageType == "NewProgramOrder")
+  )
+  |> aggregateWindow(every: 1h, fn: sum, createEmpty: false)
+  |> group(columns: ["messageType", "region"])
+  |> fill(value: 0)
 '''
