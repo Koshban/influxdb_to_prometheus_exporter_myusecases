@@ -46,10 +46,12 @@ avgQuery = data
   |> aggregateWindow(every: 15m, fn: mean, createEmpty: false)
 
 p90Query = data
-  |> aggregateWindow(every: 15m, fn: (tables=<-, column) => tables |> percentile(column: column, percentile: 0.9), createEmpty: false)
+  |> window(every: 15m)
+  |> percentile(column: "_value", percentile: 0.9)
 
 p95Query = data
-  |> aggregateWindow(every: 15m, fn: (tables=<-, column) => tables |> percentile(column: column, percentile: 0.95), createEmpty: false)
+  |> window(every: 15m)
+  |> percentile(column: "_value", percentile: 0.95)
 
 union(tables: [minQuery, maxQuery, avgQuery, p90Query, p95Query])
 '''
