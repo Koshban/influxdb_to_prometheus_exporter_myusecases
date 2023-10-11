@@ -47,11 +47,11 @@ avgQuery = data
 
 p90Query = data
   |> window(every: 15m)
-  |> percentile(column: "_value", percentile: 0.9)
+  |> quantile(column: "_value", quantile: 0.9)
 
 p95Query = data
   |> window(every: 15m)
-  |> percentile(column: "_value", percentile: 0.95)
+  |> quantile(column: "_value", quantile: 0.95)
 
 union(tables: [minQuery, maxQuery, avgQuery, p90Query, p95Query])
 '''
