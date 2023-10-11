@@ -25,17 +25,31 @@ queries = {
 }
 
 flux_query = '''
-from(bucket: "two_weeks_only")
-  |> range(start: -7d, stop: now())
-  |> filter(fn: (r) => 
-      r._measurement == "measurement.Talon" and
-      r._field == "max" and
-      r.region == "ASIA" and
-      r.flow == "kafka.equity.order.gateway.inbound" and
-      r.measurementType == "cumulativeTime" and
-      r.action == "completed" and
-      (r.messageType == "NewOrder" or r.messageType == "NewProgramOrder")
-    )
-  |> aggregateWindow(every: 1s, fn: max, createEmpty: false)
-  |> group(columns: ["messageType", "region"])
+f = (r) => 
+  r._measurement == "measurement.Talon" and 
+  r._field == "value" and 
+  r.metricName == "external.release.response.time" and 
+  r.operation == "create" and 
+  r.region == "ASIA"
+
+data = from(bucket: "two_weeks_only")
+  |> range(start: -12h)
+  |> filter(fn: f)
+
+minQuery = data
+  |> aggregateWindow(every: 15m, fn: min, createEmpty: false)
+
+maxQuery = data
+  |> aggregateWindow(every: 15m, fn: max, createEmpty: false)
+
+avgQuery = data
+  |> aggregateWindow(every: 15m, fn: mean, createEmpty: false)
+
+p90Query = data
+  |> aggregateWindow(every: 15m, fn: (tables=<-, column) => tables |> percentile(column: column, percentile: 0.9), createEmpty: false)
+
+p95Query = data
+  |> aggregateWindow(every: 15m, fn: (tables=<-, column) => tables |> percentile(column: column, percentile: 0.95), createEmpty: false)
+
+union(tables: [minQuery, maxQuery, avgQuery, p90Query, p95Query])
 '''
