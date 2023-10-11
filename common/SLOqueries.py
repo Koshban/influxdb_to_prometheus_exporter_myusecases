@@ -24,3 +24,18 @@ queries = {
     # Add more queries here...
 }
 
+flux_query = '''
+from(bucket: "two_weeks_only")
+  |> range(start: -7d, stop: now())
+  |> filter(fn: (r) => 
+      r._measurement == "measurement.Talon" and
+      r._field == "max" and
+      r.region == "ASIA" and
+      r.flow == "kafka.equity.order.gateway.inbound" and
+      r.measurementType == "cumulativeTime" and
+      r.action == "completed" and
+      (r.messageType == "NewOrder" or r.messageType == "NewProgramOrder")
+    )
+  |> aggregateWindow(every: 1s, fn: max, createEmpty: false)
+  |> group(columns: ["messageType", "region"])
+'''
