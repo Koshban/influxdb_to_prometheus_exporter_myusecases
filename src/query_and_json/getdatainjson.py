@@ -8,8 +8,8 @@ import pandas as pd
 # Configure query and execution frequency
 query = '''
 from(bucket: "default")
-  |> range(start: 1695907248642ms, stop: 1695916384594ms)
-  |> filter(fn: (r) => r._measurement == "talon" and r.region =~ /^US$/ and r.latencyType == "client.update.message.loadAndSend")
+  |> range(start: -10m, stop: now())
+  |> filter(fn: (r) => r._measurement == "Macchhar" and r.region =~ /^INDIA$/ and r.latencyType == "client.update.message.loadAndSend")
   |> keep(columns: ["95tile", "messageType"])
   |> group(columns: ["messageType"])
 '''
@@ -23,9 +23,17 @@ query_api = client.query_api()
 
 # Function to execute the query and process the result
 def execute_query():
-    df = query_api.query_data_frame(query)
-    json_output = df.to_json(orient="records", date_format="iso")
-    print(json_output)
+    results = query_api.query_data_frame(query)
+
+    if isinstance(results, pd.DataFrame):
+        json_output = results.to_json(orient="records", date_format="iso")
+    elif isinstance(results, list):
+        json_output = json.dumps(results)
+    else:
+        raise TypeError(f"Unexpected Result type : {type(results)}")
+    
+    with open(file="queryoutput.json", mode='w', encoding='utf-8') as f_w:
+        f_w.write(json_output)
 
 # Loop to execute the query at the specified frequency
 while True:
