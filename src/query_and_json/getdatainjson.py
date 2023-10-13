@@ -23,33 +23,25 @@ query_api = client.query_api()
 
 # Function to execute the query and process the result
 def execute_query():
-    results = query_api.query_data_frame(query)
+  results = query_api.query_data_frame(query)
 
-    if isinstance(results, pd.DataFrame):
-        json_output = results.to_json(orient="records", date_format="iso")
-    elif isinstance(results, list):
-      # Extract data from FluxTable objects
-      result_data = [
-        {
-          "measurement": table.measurement,
-          "values": [
-              {
-                "time": record.get_time().isoformat(),
-                "_value": record.get_value(),
-                "_field": record.get_field(),
-                "tags": record.values.get('tags'),
-              }
-              for record in table.records
-          ],                
-        }
-        for table in results
+  if isinstance(results, pd.DataFrame):
+    json_output = results.to_json(orient="records", date_format="iso")
+  elif isinstance(results, list):
+    # Extract data from FluxTable objects
+    result_data = [
+      {
+        "messageType": record.get_value("messageType"),
+        "95tile": record.get_value("95tile"),
+      }
+      for table in json_output for record in table.records
       ]
-      json_output = json.dumps(result_data)
-    else:
-        raise TypeError(f"Unexpected Result type : {type(results)}")
-    
-    with open(file="queryoutput.json", mode='w', encoding='utf-8') as f_w:
-        f_w.write(json_output)
+    json_output = json.dumps(result_data)    
+  else:
+      raise TypeError(f"Unexpected Result type : {type(results)}")
+  
+  with open(file="queryoutput.json", mode='w', encoding='utf-8') as f_w:
+    f_w.write(json_output)
 
 # Loop to execute the query at the specified frequency
 while True:
