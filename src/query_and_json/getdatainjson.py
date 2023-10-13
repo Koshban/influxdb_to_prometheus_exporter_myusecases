@@ -28,7 +28,23 @@ def execute_query():
     if isinstance(results, pd.DataFrame):
         json_output = results.to_json(orient="records", date_format="iso")
     elif isinstance(results, list):
-        json_output = json.dumps(results)
+      # Extract data from FluxTable objects
+      result_data = [
+        {
+          "measurement": table.measurement,
+          "values": [
+              {
+                "time": record.get_time().isoformat(),
+                "_value": record.get_value(),
+                "_field": record.get_field(),
+                "tags": record.values.get('tags'),
+              }
+              for record in table.records
+          ],                
+        }
+        for table in results
+      ]
+      json_output = json.dumps(result_data)
     else:
         raise TypeError(f"Unexpected Result type : {type(results)}")
     
