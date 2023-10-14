@@ -5,8 +5,11 @@ import pandas as pd
 import json
 import threading
 import time
+from flask import Flask
 import common.connections as connections
 import common.SLOqueries
+
+app = Flask(__name__)
 
 class QueryExecutor:
   def __init__(self, client):
@@ -61,7 +64,8 @@ def worker(query_executor, prometheus_pusher, query, frequency):
       prometheus_pusher.push_to_prometheus(json.loads(json_output))
     time.sleep(frequency)
 
-def main():
+@app.route('/start')
+def start_workers():
   client = InfluxDBClient(url=connections.url, token="your-token", org="your-org")
   query_executor = QueryExecutor(client)
   prometheus_pusher = PrometheusPusher('localhost:9091', 'some_job')
@@ -69,6 +73,8 @@ def main():
   for query_dict in common.SLOqueries.queries:
     query_thread = threading.Thread(target=worker, args=(query_executor, prometheus_pusher, query_dict['query'], query_dict['frequency']))
     query_thread.start()
+  
+  return "Worker threads started", 200
 
 if __name__ == "__main__":
-  main()
+  app.run(debug=True)
