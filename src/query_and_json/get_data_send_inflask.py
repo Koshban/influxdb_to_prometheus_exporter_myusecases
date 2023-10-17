@@ -7,8 +7,12 @@ import json
 import threading
 import time
 import common.connections as connections
-import common.SLOqueries
+import common.influxqueries
+import logging
 
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 app = Flask(__name__)
 
 # Global registry for Prometheus metrics
@@ -78,6 +82,7 @@ def worker(query_executor, metric_name, query, frequency):
     try:
       json_output = query_executor.execute_query(query)
       if json_output is not None:
+        logging.info(f"JSON Output: {json_output}")
         for item in json.loads(json_output):
             labels = ['action', 'flow', 'host', 'instanceName', 'measurementType', 'messageType', 'mode', 'region']
             label_values = [item.get(label) for label in labels]
@@ -85,7 +90,7 @@ def worker(query_executor, metric_name, query, frequency):
             g = Gauge(metric_name, 'Description of gauge', labels, registry=registry)
             g.labels(*label_values).set(item.get('_value', 0))
     except Exception as e:
-      print(f"Error in worker thread: {str(e)}")
+      logging.error(f"Error in worker thread: {str(e)}")
 
     time.sleep(frequency / 1000)  # convert frequency from ms to s
 
@@ -95,10 +100,10 @@ def start():
   Starts the worker threads to execute the InfluxDB queries and update the Prometheus metrics.
   """
   try:
-    client = InfluxDBClient(url=connections.url, token="your-token", org="your-org")
+    client = InfluxDBClient(url=connections.url, token="your-token", org="your-db-name")
     query_executor = QueryExecutor(client)
 
-    for metric_name, query_dict in common.SLOqueries.queries.items():
+    for metric_name, query_dict in common.influxqueries.queries.items():
       query_thread = threading.Thread(target=worker, args=(query_executor, metric_name, query_dict['query'], query_dict['frequency']))
       query_thread.start()
     
