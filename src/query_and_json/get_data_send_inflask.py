@@ -15,10 +15,28 @@ app = Flask(__name__)
 registry = REGISTRY
 
 class QueryExecutor:
+  """
+  Class to handle execution of queries against InfluxDB.
+  """
+
   def __init__(self, client):
+    """
+    Constructor for QueryExecutor.
+    Args:
+      client: InfluxDB client instance.
+    """
     self.client = client
     
   def execute_query(self, query):
+    """
+    Executes a query against InfluxDB and returns the results.
+
+    Args:
+      query: A string representing the query to be executed.
+
+    Returns:
+      A JSON string representing the result of the query, or None if an error occurred or no data was returned.
+    """
     try:
       results = self.client.query_data_frame(query)
 
@@ -47,6 +65,15 @@ class QueryExecutor:
       return None
 
 def worker(query_executor, metric_name, query, frequency):
+  """
+  Worker function to execute a query at a regular interval and update the associated Prometheus metric.
+
+  Args:
+    query_executor: A QueryExecutor instance to handle query execution.
+    metric_name: The name of the Prometheus metric to be updated.
+    query: The InfluxDB query to be executed.
+    frequency: The frequency at which the query should be executed, in milliseconds.
+  """
   while True:
     try:
       json_output = query_executor.execute_query(query)
@@ -64,6 +91,9 @@ def worker(query_executor, metric_name, query, frequency):
 
 @app.route("/start", methods=['GET'])
 def start():
+  """
+  Starts the worker threads to execute the InfluxDB queries and update the Prometheus metrics.
+  """
   try:
     client = InfluxDBClient(url=connections.url, token="your-token", org="your-org")
     query_executor = QueryExecutor(client)
@@ -78,12 +108,18 @@ def start():
 
 @app.route('/koshban-trading-metrics', methods=['GET'])
 def metrics():
-    try:
-        return Response(generate_latest(registry), mimetype='text/plain')
-    except Exception as e:
-        return f"Error while generating metrics: {str(e)}", 500
+  """
+  Returns the Prometheus metrics in text format.
+  """
+  try:
+    return Response(generate_latest(registry), mimetype='text/plain')
+  except Exception as e:
+    return f"Error while generating metrics: {str(e)}", 500
 
 if __name__ == "__main__":
+  """
+  Starts the Flask application.
+  """
   try:
     app.run(port=8888)
   except Exception as e:
