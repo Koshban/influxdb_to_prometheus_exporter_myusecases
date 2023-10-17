@@ -106,15 +106,21 @@ def start():
   except Exception as e:
     return f"Error while starting worker threads: {str(e)}", 500
 
-@app.route('/koshban-trading-metrics', methods=['GET'])
+@app.route('/koshban-trading-metrics', methods=['GET', 'POST'])
 def metrics():
   """
-  Returns the Prometheus metrics in text format.
+  Returns the Prometheus metrics in text format for GET requests,
+  and prints POSTed data for POST requests.
   """
-  try:
-    return Response(generate_latest(registry), mimetype='text/plain')
-  except Exception as e:
-    return f"Error while generating metrics: {str(e)}", 500
+  if request.method == 'GET':
+    try:
+      return Response(generate_latest(registry), mimetype='text/plain')
+    except Exception as e:
+      return f"Error while generating metrics: {str(e)}", 500
+  elif request.method == 'POST':
+    data = request.get_json()  # Assuming the POSTed data is in JSON format
+    print(data)
+    return 'Data received and printed!'
 
 if __name__ == "__main__":
   """
