@@ -17,9 +17,9 @@ script_name = os.path.splitext(os.path.basename(__file__))[0]
 # Generate a timestamp
 timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 # The log file name
-log_filename = f"/home/koshban/mylogs/{script_name}_{timestamp}.log"
+log_filename = "/home/koshban/mylogs/{script_name}_{timestamp}.log"
 # Configure logging
-logging.basicConfig(filename='log_filename', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename=f'{log_filename}', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 app = Flask(__name__)
 
 # Global registry for Prometheus metrics
