@@ -56,12 +56,12 @@ async def worker(client, metric_name, query, frequency):
       logging.info(f"Query result: {tables}")
       for table in tables:
         for record in table.records:
-          labels = ['messageType', 'soapid', 'region']
+          labels = ['TypeSet', 'soapid', 'region']
           label_values = ['mymsg', '129080', 'All']
 
           # Update the Gauge value
         #   metrics_dict[metric_name].labels(*label_values).set(record.get_value('_value', 0))
-        _value = record.get_value('_value')
+        _value = record.values.get('_value', 0.0)
         if _value is None:
             _value = 0
         metrics_dict[metric_name].labels(*label_values).set(_value)
@@ -80,6 +80,7 @@ async def get_metrics():
 @app.post('/koshban-trading-metrics')
 async def post_metrics(data: dict):
   print(data)
+  logging.info(f"Received POST request at /koshban-trading-metrics with data: {data}")
   return 'Data received and printed!'
 
 def main():
