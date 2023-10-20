@@ -1,5 +1,5 @@
 """ Classes for creating UDP or TCP Connections """
-import exporterconfig
+import myconfig
 import socket
 
 """ UDPConn"""
@@ -10,7 +10,7 @@ class UDPConn:
 
     def receive(self, buffer_size=1024):
         data, address = self.sock.recvfrom(buffer_size)
-        data, address = self.sock.recvfrom(exporterconfig.listenAddress)
+        data, address = self.sock.recvfrom(myconfig.listenAddress)
         return data, address
 
     def send(self, message, destination_address):
@@ -44,7 +44,7 @@ influxdbconn = (host=exporterconfig.host,
                 database=exporterconfig.database, 
                 ssl=exporterconfig.ssl.lower() in ('true', '1', 'yes'), 
                 verify_ssl=exporterconfig.verify_ssl.lower() in ('true', '1', 'yes') )
-
+influxdbconndetails=(url=connections.url, token="your-token", org="your-org")
 """ Usage """
 """
 conn = UDPConn(('localhost', bind_address))

@@ -13,17 +13,20 @@ from fastapi.responses import Response
 from uvicorn import run
 import requests
 import atexit
+import ssl
 
 """
 This script sets up a logging for the application, configures and starts a FastAPI app, and sets up InfluxDB client configuration details.
 It also contains functions to execute queries on the InfluxDB, schedule these queries, and handle endpoints for getting and posting metrics.
 """
 
-# Get the script name (without the extension) for log file
-script_name = os.path.splitext(os.path.basename(__file__))[0]
-# Generate a timestamp for log file
-timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+# Add SSL to Serve Over HTTPS
+ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+ssl_context.load_cert_chain("path/to/localhost.crt", "path/to/localhost.key")
+
 # The log file name
+script_name = os.path.splitext(os.path.basename(__file__))[0]
+timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 log_filename = ("/home/koshban/mylogs/{script_name}_{timestamp}.log")
 # Configure logging
 logging.basicConfig(filename=f'{log_filename}', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -33,11 +36,6 @@ app = FastAPI()
 
 # Global registry for Prometheus metrics
 prom_registry = CollectorRegistry(auto_describe=True)
-
-# InfluxDB client configuration details
-INFLUXDB_URL = os.getenv("INFLUXDB_URL")
-INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN")
-INFLUXDB_ORG = os.getenv("INFLUXDB_ORG")
 
 # Create a Gauge for each metric in the global registry
 metrics_dict = { 
@@ -107,7 +105,7 @@ async def startup():
   """
   Startup event for the FastAPI app. This function creates an InfluxDB client and starts the query tasks.
   """
-  client = InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG)
+  client = InfluxDBClient(connections.influxdbconndetails)
   for metric_name, query_dict in common.influxqueries.queries.items():
     query_and_send(client, metric_name, query_dict['query'], query_dict['frequency'])
 
@@ -140,7 +138,7 @@ def main():
   """
   Main function to start the FastAPI app.
   """
-  run("main:app", host="0.0.0.0", port=8000, log_level="info")
+  run("withbg_job:app", host="0.0.0.0", port=8000, log_level="info")
 
 if __name__ == "__main__":
   main()

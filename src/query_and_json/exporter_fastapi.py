@@ -14,11 +14,9 @@ import common.influxqueries
 from fastapi.responses import Response
 from uvicorn import run
 
-# Get the script name (without the extension) for log file
-script_name = os.path.splitext(os.path.basename(__file__))[0]
-# Generate a timestamp for log file
-timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 # The log file name
+script_name = os.path.splitext(os.path.basename(__file__))[0]
+timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 log_filename = ("/home/koshban/mylogs/{script_name}_{timestamp}.log")
 # Configure logging
 logging.basicConfig(filename=f'{log_filename}', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -28,11 +26,6 @@ app = FastAPI()
 
 # Global registry for Prometheus metrics
 prom_registry = CollectorRegistry(auto_describe=True)
-
-# InfluxDB client configuration details
-INFLUXDB_URL = os.getenv("INFLUXDB_URL")
-INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN")
-INFLUXDB_ORG = os.getenv("INFLUXDB_ORG")
 
 # Create a Gauge for each metric in the global registry
 metrics_dict = { 
@@ -69,7 +62,7 @@ async def worker(client, metric_name, query, frequency):
 
 @app.on_event("startup")
 async def startup():
-  client = InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG)
+  client = InfluxDBClient(connections.influxdbconndetails)
   for metric_name, query_dict in common.influxqueries.queries.items():
     asyncio.create_task(worker(client, metric_name, query_dict['query'], query_dict['frequency']))
 

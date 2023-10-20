@@ -1,5 +1,5 @@
 from flask import Flask, Response, request
-from influxdb_client import InfluxDBClient, InfluxDBError
+from influxdb_client import InfluxDBClient
 from influxdb_client.client.query_api import QueryApi
 from prometheus_client import Gauge, generate_latest, REGISTRY
 import pandas as pd
@@ -68,9 +68,6 @@ class QueryExecutor:
         return json.dumps(result_data)
       else:
         raise TypeError(f"Unexpected Result type : {type(results)}")
-    except InfluxDBError as e:
-      print(f"InfluxDBError while executing query: {str(e)}")
-      return None
     except Exception as e:
       print(f"Error while executing query: {str(e)}")
       return None
@@ -107,7 +104,7 @@ def start():
   Starts the worker threads to execute the InfluxDB queries and update the Prometheus metrics.
   """
   try:
-    client = InfluxDBClient(url=connections.url, token="your-token", org="your-db-name")
+    client = InfluxDBClient(connections.influxdbconndetails)
     query_executor = QueryExecutor(client)
 
     for metric_name, query_dict in common.influxqueries.queries.items():
