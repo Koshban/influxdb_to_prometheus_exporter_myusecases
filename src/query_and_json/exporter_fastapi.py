@@ -35,7 +35,7 @@ INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN")
 INFLUXDB_ORG = os.getenv("INFLUXDB_ORG")
 
 # Create a Gauge for each metric in the global registry
-metrics = { 
+metrics_dict = { 
   metric_name: Gauge(metric_name, 'Description of gauge', ['soapid', 'region'], registry=prom_registry)
   for metric_name in common.influxqueries.queries.keys()
 }
@@ -57,10 +57,14 @@ async def worker(client, metric_name, query, frequency):
       for table in tables:
         for record in table.records:
           labels = ['messageType', 'soapid', 'region']
-          label_values = [record.get_value(label) for label in labels]
+          label_values = ['mymsg', '129080', 'All']
 
           # Update the Gauge value
-          metrics[metric_name].labels(*label_values).set(record.get_value('_value', 0))
+        #   metrics_dict[metric_name].labels(*label_values).set(record.get_value('_value', 0))
+        _value = record.get_value('_value')
+        if _value is None:
+            _value = 0
+        metrics_dict[metric_name].labels(*label_values).set(_value)
     await asyncio.sleep(frequency / 1000)  # convert frequency from ms to s
 
 @app.on_event("startup")
@@ -70,11 +74,11 @@ async def startup():
     asyncio.create_task(worker(client, metric_name, query_dict['query'], query_dict['frequency']))
 
 @app.get('/koshban-trading-metrics')
-async def metrics():
+async def get_metrics():
   return Response(generate_latest(prom_registry), media_type='text/plain')
 
 @app.post('/koshban-trading-metrics')
-async def metrics(data: dict):
+async def post_metrics(data: dict):
   print(data)
   return 'Data received and printed!'
 
