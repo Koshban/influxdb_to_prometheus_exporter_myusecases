@@ -11,6 +11,8 @@ import pandas as pd
 import asyncio
 import common.connections as connections
 import common.influxqueries
+from fastapi.responses import Response
+from uvicorn import run
 
 # Get the script name (without the extension) for log file
 script_name = os.path.splitext(os.path.basename(__file__))[0]
@@ -75,3 +77,9 @@ async def metrics():
 async def metrics(data: dict):
   print(data)
   return 'Data received and printed!'
+
+def main():
+  run("main:app", host="0.0.0.0", port=8000, log_level="info")
+
+if __name__ == "__main__":
+  main()
