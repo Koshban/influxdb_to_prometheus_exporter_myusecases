@@ -29,8 +29,6 @@ To get the application running, you need to have Flask, InfluxDB, and Prometheus
 - FASTAPI
 - SSL Certificates : Place your SSL certificate and key in the path specified in the script
 
-You can install these using pip:
-
 ### Installation
 
 ```bash
