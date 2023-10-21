@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from datetime import datetime
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from influxdb_client import InfluxDBClient
 from prometheus_client import Gauge, generate_latest, REGISTRY, CollectorRegistry
 import pandas as pd
@@ -59,7 +59,7 @@ def execute_query(client, query):
     tables = query_api.query(query)
     return tables
   except Exception as e:
-    logging.error(f"Error executing InfluxDB query: {str(e)}")
+    logging.exception(f"Error executing InfluxDB query: {str(e)}")
     return None
 
 def query_and_send(client, metric_name, query, frequency):
@@ -80,6 +80,7 @@ def query_and_send(client, metric_name, query, frequency):
     """
     The task to execute. This task executes a query, logs the result, sends the result to a URL, and updates a metric.
     """
+    logging.info(f"Running task: {task.__name__}")
     tables = execute_query(client, query)
     if tables is not None:
       logging.info(f"Query result: {tables}")
@@ -94,11 +95,14 @@ def query_and_send(client, metric_name, query, frequency):
           metrics_dict[metric_name].labels(*label_values).set(_value)
 
           # Send the data to the specified URL
-          endpoint = "http://abcd.com/koshban-trading-metrics"
+          endpoint = "https://abcd.com:8000/koshban-trading-metrics"
           data = {'value': _value, 'labels': label_values}
-          requests.post(endpoint, data=json.dumps(data), headers={'Content-Type': 'application/json'})
+          if data:
+            response = requests.post(endpoint, data=json.dumps(data), headers={'Content-Type': 'application/json'})
+            logging.info(f"Sent data to {endpoint}, received status code: {response.status_code}")
 
   scheduler.add_job(task, 'interval', minutes=frequency)
+  logging.info(f"Scheduled task: {task.__name__} to run every {frequency} minutes")
 
 @app.on_event("startup")
 async def startup():
@@ -120,7 +124,7 @@ async def get_metrics():
   return Response(generate_latest(prom_registry), media_type='text/plain')
 
 @app.post('/koshban-trading-metrics')
-async def post_metrics(data: dict):
+async def post_metrics(request: Request, data: dict):
   """
   Endpoint for posting metrics. This function logs and prints the received data.
 
@@ -130,15 +134,20 @@ async def post_metrics(data: dict):
   Returns:
   str: A message indicating successful receipt of data.
   """
+  client_host = request.client.host
+  user_agent = request.headers.get('User-Agent')
+  logging.info(f"Received POST request at /koshban-trading-metrics from {client_host} with User-Agent: {user_agent} and data: {data}")
   print(data)
-  logging.info(f"Received POST request at /koshban-trading-metrics with data: {data}")
   return 'Data received and printed!'
 
 def main():
   """
   Main function to start the FastAPI app.
   """
-  run("withbg_job:app", host="0.0.0.0", port=8000, log_level="info")
+  run("withbg_job:app", host="0.0.0.0", port=8000, 
+      log_level="info",
+      ssl_keyfile="/home/koshban/mykeys/keyfile.pem", 
+      ssl_certfile="/home/koshban/mykeys/certfile.pem")
 
 if __name__ == "__main__":
   main()
