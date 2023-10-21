@@ -95,7 +95,7 @@ def query_and_send(client, metric_name, query, frequency):
           metrics_dict[metric_name].labels(*label_values).set(_value)
 
           # Send the data to the specified URL
-          endpoint = "https://abcd.com:8000/koshban-trading-metrics"
+          endpoint = "https://localhost:8000/koshban-trading-metrics"
           data = {'value': _value, 'labels': label_values}
           if data:
             response = requests.post(endpoint, data=json.dumps(data), headers={'Content-Type': 'application/json'})
