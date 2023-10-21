@@ -5,7 +5,7 @@ import json
 import common.connections as connections
 import pandas as pd
 from prometheus_client import Gauge, CollectorRegistry, push_to_gateway
-import common.SLOqueries
+import common.influxqueries
 
 
 # Configure query and execution frequency

@@ -16,21 +16,6 @@ os.environ['REQUESTS_CA_BUNDLE'] = 'PATH' # The actual absolute .pem file path
 prometheus_pushgateway_url = os.environ.get('PROMETHEUS_PUSHGATEWAY_URL', 'http://localhost:9091/metrics/job/my_job')
 prometheusport = int(os.environ.get('PROMETHEUS_PORT', '8080'))
 
-# Various addresses and ports
 
-MAX_UDP_PAYLOAD = 64 * 1024
-listenAddress = ":18087"
-metricsPath = "/metrics"
-exporterMetricsPath = "/metrics/exporter"
-sampleExpiry = 5 * 60
-bindAddress = ":9122"
-exportTimestamp = False
-destinationAddress = ":9122"
-prometheus_http_port = ":8000"
-precision ="ns"
-Influxdb_Version = "2.7"
-
-# Bind the socket to a specific address and port
-bind_address = ('localhost', bindAddress)
 
 
