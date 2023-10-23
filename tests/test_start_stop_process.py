@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, call
 import subprocess
-from start_stop import start  # replace with actual import statement
+from src.query_and_json import start 
 
 class TestStartStop(unittest.TestCase):
     @patch('subprocess.run')
@@ -20,7 +20,7 @@ class TestStartStop(unittest.TestCase):
         result = start()
         
         mock_run.assert_called_once_with('mock command', check=True, shell=True, capture_output=True)
-        self.assertEqual(result, 1)  # or whatever you expect in case of failure
+        self.assertEqual(result, 1)  
 
 
 if __name__ == '__main__':
