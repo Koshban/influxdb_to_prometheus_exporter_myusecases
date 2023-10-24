@@ -101,17 +101,20 @@ def query_and_send(client, metric_name, query, frequency):
       logging.info(f"Query result: {tables}")
       for table in tables:
         for record in table.records:
-          labels = ['soapid', 'region']
-          label_values = ['129080', 'All']
+          soapid = record.values.get('soapid', 'default_soapid')
+          region = record.values.get('region', 'default_region')
 
           _value = record.values.get('_value', 0.0)
           if _value is None:
               _value = 0
-          metrics_dict[metric_name].labels(*label_values).set(_value)
+          # Update the metrics
+          if (soapid, region) in metrics_dict:
+              metrics_dict[(soapid, region)].set(_value)
+          # metrics_dict[metric_name].labels(*label_values).set(_value)
 
           # Send the data to the specified URL
           endpoint = "https://localhost:8000/koshban-trading-metrics"
-          data = {'value': _value, 'labels': label_values}
+          data = {'value': _value, 'labels': ['soapid', 'region']}
           if data:
             response = requests.post(endpoint, data=json.dumps(data), headers={'Content-Type': 'application/json'})
             logging.info(f"Sent data to {endpoint}, received status code: {response.status_code}")
