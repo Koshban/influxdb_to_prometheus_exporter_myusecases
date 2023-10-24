@@ -4,7 +4,8 @@ import logging
 from datetime import datetime
 from fastapi import FastAPI, Request
 from influxdb_client import InfluxDBClient
-from prometheus_client import Gauge, generate_latest, REGISTRY, CollectorRegistry
+from prometheus_client import Gauge, generate_latest, CollectorRegistry
+from prometheus_client.core import GaugeMetricFamily
 import pandas as pd
 from apscheduler.schedulers.background import BackgroundScheduler
 import common.connections as connections
@@ -30,6 +31,17 @@ timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 log_filename = ("/home/koshban/mylogs/{script_name}_{timestamp}.log")
 # Configure logging
 logging.basicConfig(filename=f'{log_filename}', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+class CustomCollector(object):
+    def __init__(self, metrics_dict):
+        self.metrics_dict = metrics_dict
+
+    def collect(self):
+        for metric_name, gauge in self.metrics_dict.items():
+            metric = GaugeMetricFamily(metric_name, 'Description of gauge', labels=['soapid', 'region'])
+            # Assuming gauge._value and gauge._label_values are set
+            metric.add_metric(gauge._label_values, gauge._value)
+            yield metric
 
 # FastAPI app
 app = FastAPI()
@@ -112,6 +124,7 @@ async def startup():
   client = InfluxDBClient(connections.influxdbconndetails)
   for metric_name, query_dict in common.influxqueries.queries.items():
     query_and_send(client, metric_name, query_dict['query'], query_dict['frequency'])
+  prom_registry.register(CustomCollector(metrics_dict)) 
 
 @app.get('/koshban-trading-metrics')
 async def get_metrics():
