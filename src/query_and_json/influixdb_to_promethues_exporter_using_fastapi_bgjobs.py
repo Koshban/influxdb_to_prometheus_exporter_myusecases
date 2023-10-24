@@ -32,15 +32,21 @@ log_filename = ("/home/koshban/mylogs/{script_name}_{timestamp}.log")
 # Configure logging
 logging.basicConfig(filename=f'{log_filename}', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+# Create a Gauge for each metric in the global registry
+metrics_dict = { 
+  metric_name: Gauge(metric_name, 'Description of gauge', ['soapid', 'region'], registry=prom_registry)
+  for metric_name in common.influxqueries.queries.keys()
+}
+
 class CustomCollector(object):
     def __init__(self, metrics_dict):
         self.metrics_dict = metrics_dict
 
     def collect(self):
-        for metric_name, gauge in self.metrics_dict.items():
-            metric = GaugeMetricFamily(metric_name, 'Description of gauge', labels=['soapid', 'region'])
-            # Assuming gauge._value and gauge._label_values are set
-            metric.add_metric(gauge._label_values, gauge._value)
+        for label_values, gauge in self.metrics_dict.items():
+            soapid, region = label_values
+            metric = GaugeMetricFamily('metric_name', 'Description of gauge', labels=['soapid', 'region'])
+            metric.add_metric([soapid, region], gauge._value)
             yield metric
 
 # FastAPI app
@@ -48,12 +54,6 @@ app = FastAPI()
 
 # Global registry for Prometheus metrics
 prom_registry = CollectorRegistry(auto_describe=True)
-
-# Create a Gauge for each metric in the global registry
-metrics_dict = { 
-  metric_name: Gauge(metric_name, 'Description of gauge', ['soapid', 'region'], registry=prom_registry)
-  for metric_name in common.influxqueries.queries.keys()
-}
 
 def execute_query(client, query):
   """
@@ -98,8 +98,8 @@ def query_and_send(client, metric_name, query, frequency):
       logging.info(f"Query result: {tables}")
       for table in tables:
         for record in table.records:
-          labels = ['TypeSet', 'soapid', 'region']
-          label_values = ['mymsg', '129080', 'All']
+          labels = ['soapid', 'region']
+          label_values = ['129080', 'All']
 
           _value = record.values.get('_value', 0.0)
           if _value is None:
