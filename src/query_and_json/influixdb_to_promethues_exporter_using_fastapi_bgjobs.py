@@ -121,6 +121,8 @@ async def get_metrics():
   Returns:
   Response: A Response object containing the latest metrics.
   """
+  metrics = generate_latest(prom_registry)
+  logging.info(f"Generated metrics: {metrics}")
   return Response(generate_latest(prom_registry), media_type='text/plain')
 
 @app.post('/koshban-trading-metrics')
