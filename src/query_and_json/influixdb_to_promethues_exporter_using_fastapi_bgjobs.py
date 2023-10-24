@@ -46,7 +46,10 @@ class CustomCollector(object):
         for label_values, gauge in self.metrics_dict.items():
             soapid, region = label_values
             metric = GaugeMetricFamily('metric_name', 'Description of gauge', labels=['soapid', 'region'])
-            metric.add_metric([soapid, region], gauge._value)
+        samples = list(gauge.collect())[0].samples
+        if len(samples) > 0:
+            _value = samples[0].value
+            metric.add_metric([soapid, region], _value)
             yield metric
 
 # FastAPI app
