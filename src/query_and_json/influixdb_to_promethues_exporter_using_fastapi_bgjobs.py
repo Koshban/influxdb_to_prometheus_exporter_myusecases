@@ -32,6 +32,8 @@ log_filename = ("/home/koshban/mylogs/{script_name}_{timestamp}.log")
 # Configure logging
 logging.basicConfig(filename=f'{log_filename}', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+# Global registry for Prometheus metrics
+prom_registry = CollectorRegistry(auto_describe=True)
 # Create a Gauge for each metric in the global registry
 metrics_dict = { 
   metric_name: Gauge(metric_name, 'Description of gauge', ['soapid', 'region'], registry=prom_registry)
@@ -54,9 +56,6 @@ class CustomCollector(object):
 
 # FastAPI app
 app = FastAPI()
-
-# Global registry for Prometheus metrics
-prom_registry = CollectorRegistry(auto_describe=True)
 
 def execute_query(client, query):
   """
@@ -115,6 +114,7 @@ def query_and_send(client, metric_name, query, frequency):
           # Send the data to the specified URL
           endpoint = "https://localhost:8000/koshban-trading-metrics"
           data = {'value': _value, 'labels': ['soapid', 'region']}
+          logging.info("Inside task. data is : {data} and JSON format is :", json.dumps(data, indent=4))
           if data:
             response = requests.post(endpoint, data=json.dumps(data), headers={'Content-Type': 'application/json'})
             logging.info(f"Sent data to {endpoint}, received status code: {response.status_code}")
