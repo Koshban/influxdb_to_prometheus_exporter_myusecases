@@ -102,14 +102,13 @@ def query_and_send(client, metric_name, query, frequency):
         for record in table.records:
           soapid = record.values.get('soapid', 'default_soapid')
           region = record.values.get('region', 'default_region')
-
           _value = record.values.get('_value', 0.0)
           if _value is None:
               _value = 0
           # Update the metrics
           if (soapid, region) in metrics_dict:
-              metrics_dict[(soapid, region)].set(_value)
-          # metrics_dict[metric_name].labels(*label_values).set(_value)
+              metrics_dict[metric_name].labels(soapid=soapid, region=region).set(_value)
+            # metrics_dict[metric_name].labels(labels).set(_value)
 
           # Send the data to the specified URL
           endpoint = "https://localhost:8000/koshban-trading-metrics"
