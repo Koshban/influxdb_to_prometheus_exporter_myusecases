@@ -28,7 +28,7 @@ ssl_context.load_cert_chain("path/to/localhost.crt", "path/to/localhost.key")
 # The log file name
 script_name = os.path.splitext(os.path.basename(__file__))[0]
 timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-log_filename = ("/home/koshban/mylogs/{script_name}_{timestamp}.log")
+log_filename = (f"/home/koshban/mylogs/{script_name}_{timestamp}.log")
 # Configure logging
 logging.basicConfig(filename=f'{log_filename}', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
