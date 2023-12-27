@@ -21,6 +21,20 @@ queries = {
         "query" : 'SELECT mean("usage") FROM "cpu" WHERE time >= now() - 1h GROUP BY time(10m)',
         "frequency": 1500
     },
+    "fixin": {
+        "query" : '''
+            from(bucket: "measurement.RapidAdditionHub")
+            |> range(start: -7d)
+            |> filter(fn: (r) =>
+                r._measurement == "fixhub.processoer.inbound.latency" and
+                r._field == "average"
+            )
+            |> aggregateWindow(every: 3h, fn: mean)
+            |> group(columns: ["_time", "bucketGroup", "stopwatchName"])
+            |> fill(usePrevious: true)
+  ''',
+        "frequency": 300
+    },
     # Add more queries here...
 }
 
