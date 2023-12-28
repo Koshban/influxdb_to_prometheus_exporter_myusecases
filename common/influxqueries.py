@@ -23,10 +23,10 @@ queries = {
     },
     "fixin": {
         "query" : '''
-            from(bucket: "measurement.RapidAdditionHub")
+            from(bucket: "RapidAdditionHub")
             |> range(start: -7d)
             |> filter(fn: (r) =>
-                r._measurement == "fixhub.processoer.inbound.latency" and
+                r._measurement == "fix.inbound.latency" and
                 r._field == "average"
             )
             |> aggregateWindow(every: 3h, fn: mean)
