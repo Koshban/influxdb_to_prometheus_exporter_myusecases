@@ -2,7 +2,7 @@
 
 queries = {
     "95tile": {
-        "query": 'SELECT "95tile" FROM "default.measurements.talon" WHERE ("region" =~ /^USS/ AND "latencyType" = "client.update.message.loadAndSend") AND time >= 1695907248642ms and time <= 1695916384594ms GROUP by "messageType"',
+        "query": 'SELECT "95tile" FROM "measurements.tangerine" WHERE ("region" =~ /^USS/ AND "latencyType" = "client.update.message.loadAndSend") AND time >= 1695907248642ms and time <= 1695916384594ms GROUP by "messageType"',
         "frequency": 900  # 900 seconds = 15 minutes        
     },
     "average": {
@@ -23,7 +23,7 @@ queries = {
     },
     "fixin": {
         "query" : '''
-            from(bucket: "RapidAdditionHub")
+            from(bucket: "RADHub")
             |> range(start: -7d)
             |> filter(fn: (r) =>
                 r._measurement == "fix.inbound.latency" and
