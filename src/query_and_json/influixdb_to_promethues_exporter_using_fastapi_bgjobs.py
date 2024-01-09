@@ -103,8 +103,8 @@ def query_and_send(client, metric_name, query, frequency):
           soapid = record.values.get('soapid', 'default_soapid')
           region = record.values.get('region', 'default_region')
           _value = record.values.get('_value', 0.0)
-          if _value is None:
-              _value = 0
+          if _value is None: # ignore None records
+              continue
           # Update the metrics
           if (soapid, region) in metrics_dict:
               metrics_dict[metric_name].labels(soapid=soapid, region=region).set(_value)
