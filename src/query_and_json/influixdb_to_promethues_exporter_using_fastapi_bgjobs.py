@@ -159,8 +159,7 @@ async def get_metrics():
               continue
 
           # Update the metrics
-          metrics_dict[metric_name].labels(soapid=soapid, region=region).set(_value)
-  
+          metrics_dict[metric_name].labels(soapid=soapid, region=region).set(_value)            
   metrics = generate_latest(prom_registry)
   logging.info(f"Generated metrics: {metrics}")
   return Response(metrics, media_type='text/plain')
