@@ -76,89 +76,111 @@ def execute_query(client, query):
     logging.exception(f"Error executing InfluxDB query: {str(e)}")
     return None
 
-def query_and_send(client, metric_name, query, frequency):
-  """
-  Schedule and execute a query task.
+# def query_and_send(client, metric_name, query, frequency):
+#   """
+#   Schedule and execute a query task.
 
-  Parameters:
-  client (InfluxDBClient): The InfluxDB client.
-  metric_name (str): The name of the metric.
-  query (str): The query to execute.
-  frequency (int): The frequency at which to execute the query in minutes.
-  """
-  scheduler = BackgroundScheduler()
-  scheduler.start()
-  atexit.register(lambda: scheduler.shutdown())
+#   Parameters:
+#   client (InfluxDBClient): The InfluxDB client.
+#   metric_name (str): The name of the metric.
+#   query (str): The query to execute.
+#   frequency (int): The frequency at which to execute the query in minutes.
+#   """
+#   scheduler = BackgroundScheduler()
+#   scheduler.start()
+#   atexit.register(lambda: scheduler.shutdown())
 
-  def task():
-    """
-    The task to execute. This task executes a query, logs the result, sends the result to a URL, and updates a metric.
-    """
-    logging.info(f"Running task: {task.__name__}")
-    tables = execute_query(client, query)
-    if tables is not None:
-      logging.info(f"Query result: {tables}")
-      for table in tables:
-        for record in table.records:
-          soapid = record.values.get('soapid', 'default_soapid')
-          region = record.values.get('region', 'default_region')
-          _value = record.values.get('_value', 0.0)
-          if _value is None: # ignore None records
-              continue
-          # Update the metrics
-          if (soapid, region) in metrics_dict:
-              metrics_dict[metric_name].labels(soapid=soapid, region=region).set(_value)
-            # metrics_dict[metric_name].labels(labels).set(_value)
+#   def task():
+#     """
+#     The task to execute. This task executes a query, logs the result, sends the result to a URL, and updates a metric.
+#     """
+#     logging.info(f"Running task: {task.__name__}")
+#     tables = execute_query(client, query)
+#     if tables is not None:
+#       logging.info(f"Query result: {tables}")
+#       for table in tables:
+#         for record in table.records:
+#           soapid = record.values.get('soapid', 'default_soapid')
+#           region = record.values.get('region', 'default_region')
+#           _value = record.values.get('_value', 0.0)
+#           if _value is None: # ignore None records
+#               continue
+#           # Update the metrics
+#           if (soapid, region) in metrics_dict:
+#               metrics_dict[metric_name].labels(soapid=soapid, region=region).set(_value)
+#             # metrics_dict[metric_name].labels(labels).set(_value)
 
-          # Send the data to the specified URL
-          endpoint = "https://localhost:8000/koshban-trading-metrics"
-          data = {'value': _value, 'labels': ['soapid', 'region']}
-          logging.info("Inside task. data is : {data} and JSON format is :", json.dumps(data, indent=4))
-          if data:
-            response = requests.post(endpoint, data=json.dumps(data), headers={'Content-Type': 'application/json'})
-            logging.info(f"Sent data to {endpoint}, received status code: {response.status_code}")
+#           # Send the data to the specified URL
+#           endpoint = "https://localhost:8000/koshban-trading-metrics"
+#           data = {'value': _value, 'labels': ['soapid', 'region']}
+#           logging.info("Inside task. data is : {data} and JSON format is :", json.dumps(data, indent=4))
+#           if data:
+#             response = requests.post(endpoint, data=json.dumps(data), headers={'Content-Type': 'application/json'})
+#             logging.info(f"Sent data to {endpoint}, received status code: {response.status_code}")
 
-  scheduler.add_job(task, 'interval', minutes=frequency)
-  logging.info(f"Scheduled task: {task.__name__} to run every {frequency} minutes")
+#   scheduler.add_job(task, 'interval', minutes=frequency)
+#   logging.info(f"Scheduled task: {task.__name__} to run every {frequency} minutes")
 
 @app.on_event("startup")
 async def startup():
   """
   Startup event for the FastAPI app. This function creates an InfluxDB client and starts the query tasks.
   """
-  client = InfluxDBClient(connections.influxdbconndetails)
-  for metric_name, query_dict in common.influxqueries.queries.items():
-    query_and_send(client, metric_name, query_dict['query'], query_dict['frequency'])
   prom_registry.register(CustomCollector(metrics_dict)) 
 
 @app.get('/koshban-trading-metrics')
 async def get_metrics():
   """
-  Endpoint for getting metrics. This function returns the latest metrics.
+  Endpoint for getting metrics. This function performs the queries, updates the metrics,
+  and returns the latest metrics.
 
   Returns:
   Response: A Response object containing the latest metrics.
   """
+  client = InfluxDBClient(connections.influxdbconndetails)
+  for metric_name, query_dict in common.influxqueries.queries.items():
+    tables = execute_query(client, query_dict['query'])
+    if tables is not None:
+      for table in tables:
+        for record in table.records:
+          # Log the record to inspect the actual keys
+          logging.debug(f"Record: {record.values}")
+
+          soapid = record.get_value('soapid')  
+          region = record.get_value('region')  
+
+          _value = record.get_value('_value', 0.0)
+          if _value is None:  # ignore None records
+              continue
+          
+          # Add a check to ensure that soapid and region are not the default values
+          if soapid == 'default_soapid' or region == 'default_region':
+              logging.error(f"Default values are being used for soapid or region: soapid={soapid}, region={region}")
+              continue
+
+          # Update the metrics
+          metrics_dict[metric_name].labels(soapid=soapid, region=region).set(_value)
+  
   metrics = generate_latest(prom_registry)
   logging.info(f"Generated metrics: {metrics}")
-  return Response(generate_latest(prom_registry), media_type='text/plain')
+  return Response(metrics, media_type='text/plain')
 
-@app.post('/koshban-trading-metrics')
-async def post_metrics(request: Request, data: dict):
-  """
-  Endpoint for posting metrics. This function logs and prints the received data.
+# @app.post('/koshban-trading-metrics')
+# async def post_metrics(request: Request, data: dict):
+#   """
+#   Endpoint for posting metrics. This function logs and prints the received data.
 
-  Parameters:
-  data (dict): The data received in the POST request.
+#   Parameters:
+#   data (dict): The data received in the POST request.
 
-  Returns:
-  str: A message indicating successful receipt of data.
-  """
-  client_host = request.client.host
-  user_agent = request.headers.get('User-Agent')
-  logging.info(f"Received POST request at /koshban-trading-metrics from {client_host} with User-Agent: {user_agent} and data: {data}")
-  print(data)
-  return 'Data received and printed!'
+#   Returns:
+#   str: A message indicating successful receipt of data.
+#   """
+#   client_host = request.client.host
+#   user_agent = request.headers.get('User-Agent')
+#   logging.info(f"Received POST request at /koshban-trading-metrics from {client_host} with User-Agent: {user_agent} and data: {data}")
+#   print(data)
+#   return 'Data received and printed!'
 
 def main():
   """
