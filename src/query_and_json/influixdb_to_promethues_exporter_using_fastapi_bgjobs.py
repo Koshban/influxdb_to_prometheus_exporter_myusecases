@@ -161,7 +161,8 @@ async def get_metrics():
           # Update the metrics
           metrics_dict[metric_name].labels(soapid=soapid, region=region).set(_value)            
   metrics = generate_latest(prom_registry)
-  logging.info(f"Generated metrics: {metrics}")
+  metrics_str = metrics.decode('utf-8')
+  logging.info(f"Generated metrics: {metrics_str}")
   return Response(metrics, media_type='text/plain')
 
 # @app.post('/koshban-trading-metrics')
