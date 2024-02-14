@@ -186,7 +186,7 @@ def main():
   Main function to start the FastAPI app.
   """
   run("withbg_job:app", host="0.0.0.0", port=8000, 
-      log_level="info",
+      log_level="debug",
       ssl_keyfile="/home/koshban/mykeys/keyfile.pem", 
       ssl_certfile="/home/koshban/mykeys/certfile.pem")
 
