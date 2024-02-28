@@ -44,7 +44,7 @@ class CustomCollector(object):
     def collect(self):
         for label_values, gauge in self.metrics_dict.items():
             soapid, region = label_values
-            metric = GaugeMetricFamily('metric_name', 'Description of gauge', labels=['soapid', 'region'])
+            metric = GaugeMetricFamily('metric_name', 'Data Exporter from influxDB', labels=['soapid', 'region'])
         samples = list(gauge.collect())[0].samples
         if len(samples) > 0:
             _value = samples[0].value
@@ -75,13 +75,12 @@ def execute_query(client, query):
   
 def reset_metrics(metrics_dict, prom_registry):
   for metric_name in list(metrics_dict.keys()):
-    # Get the original settings of the Gauge
     gauge: Gauge = metrics_dict[metric_name]
     labelnames = gauge._labelnames
     # Remove the old Gauge from the registry
     prom_registry.unregister(gauge)
     # Recreate the Gauge and replace the old one in metrics_dict
-    metrics_dict[metric_name] = Gauge(metric_name, 'Description of gauge', labelnames=labelnames, registry=prom_registry)
+    metrics_dict[metric_name] = Gauge(metric_name, 'Data Exporter from influxDB', labelnames=labelnames, registry=prom_registry)
 
 @app.on_event("startup")
 async def startup():
