@@ -33,7 +33,7 @@ logging.basicConfig(filename=f'{log_filename}', level=logging.INFO, format='%(as
 prom_registry = CollectorRegistry(auto_describe=True)
 # Create a Gauge for each metric in the global registry
 metrics_dict = { 
-  metric_name: Gauge(metric_name, 'Description of gauge', ['soapid', 'region'], registry=prom_registry)
+  metric_name: Gauge(metric_name, 'Data Exporter from influxDB', ['soapid', 'region'], registry=prom_registry)
   for metric_name in common.influxqueries.queries.keys()
 }
 
