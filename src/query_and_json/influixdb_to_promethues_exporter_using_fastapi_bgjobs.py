@@ -102,6 +102,11 @@ async def get_metrics():
   client = InfluxDBClient(connections.influxdbconndetails)
   # Reset the metrics before fetching new data
   reset_metrics(metrics_dict, prom_registry)
+  # Log the reset metrics values (should be zero if reset correctly)
+  for metric_name in metrics_dict:
+    for label_set in metrics_dict[metric_name]._metrics:
+      value = metrics_dict[metric_name]._metrics[label_set].get()
+      logging.info(f"Metric {metric_name} with labels {label_set} has been reset to: {value}")
 
   for metric_name, query_dict in common.influxqueries.queries.items():
     tables = execute_query(client, query_dict['query'])
