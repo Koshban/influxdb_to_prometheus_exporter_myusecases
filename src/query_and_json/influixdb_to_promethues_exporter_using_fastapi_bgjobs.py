@@ -100,13 +100,7 @@ async def get_metrics():
   Response: A Response object containing the latest metrics.
   """
   client = InfluxDBClient(connections.influxdbconndetails)
-  # Reset the metrics before fetching new data
-  reset_metrics(metrics_dict, prom_registry)
-  # Log the reset metrics values (should be zero if reset correctly)
-  for metric_name in metrics_dict:
-    for label_set in metrics_dict[metric_name]._metrics:
-      value = metrics_dict[metric_name]._metrics[label_set].get()
-      logging.info(f"Metric {metric_name} with labels {label_set} has been reset to: {value}")
+  
 
   for metric_name, query_dict in common.influxqueries.queries.items():
     tables = execute_query(client, query_dict['query'])
@@ -132,8 +126,16 @@ async def get_metrics():
           metrics_dict[metric_name].labels(soapid=soapid, region=region).set(_value)            
   metrics = generate_latest(prom_registry)
   metrics_str = metrics.decode('utf-8')
+  response = Response(metrics, media_type='text/plain')
   logging.info(f"Generated metrics: {metrics_str}")
-  return Response(metrics, media_type='text/plain')
+  # Reset the metrics before fetching new data
+  reset_metrics(metrics_dict, prom_registry)
+  # Log the reset metrics values (should be zero if reset correctly)
+  for metric_name in metrics_dict:
+    for label_set in metrics_dict[metric_name]._metrics:
+      value = metrics_dict[metric_name]._metrics[label_set].get()
+      logging.info(f"Metric {metric_name} with labels {label_set} has been reset to: {value}")
+  return response
 
 def main():
   """
