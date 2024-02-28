@@ -128,16 +128,15 @@ async def get_metrics():
   metrics_str = metrics.decode('utf-8')
   response = Response(metrics, media_type='text/plain')
   logging.info(f"Generated metrics: {metrics_str}")
+  # Reset the metrics before fetching new data
+  reset_metrics(metrics_dict, prom_registry)
   # Check if metrics_dict is not empty
   if not metrics_dict:
     logging.info("metrics_dict is empty. No metrics to log after reset.")
   else:
     # Log the length of metrics_dict
     logging.info(f"metrics_dict contains {len(metrics_dict)} items.")
-
-    # Log the entire metrics_dict (if it's not too large)
     logging.info(f"Contents of metrics_dict: {metrics_dict}")
-
     # Log the reset metrics values (should be zero if reset correctly)
     for metric_name in metrics_dict:
       for label_set, metric in metrics_dict[metric_name]._metrics.items():
