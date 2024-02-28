@@ -73,9 +73,15 @@ def execute_query(client, query):
     logging.exception(f"Error executing InfluxDB query: {str(e)}")
     return None
   
-def reset_metrics(metrics_dict):
-  for metric_name in metrics_dict:
-    metrics_dict[metric_name].clear()
+def reset_metrics(metrics_dict, prom_registry):
+  for metric_name in list(metrics_dict.keys()):
+    # Get the original settings of the Gauge
+    gauge: Gauge = metrics_dict[metric_name]
+    labelnames = gauge._labelnames
+    # Remove the old Gauge from the registry
+    prom_registry.unregister(gauge)
+    # Recreate the Gauge and replace the old one in metrics_dict
+    metrics_dict[metric_name] = Gauge(metric_name, 'Description of gauge', labelnames=labelnames, registry=prom_registry)
 
 @app.on_event("startup")
 async def startup():
@@ -95,7 +101,7 @@ async def get_metrics():
   """
   client = InfluxDBClient(connections.influxdbconndetails)
   # Reset the metrics before fetching new data
-  reset_metrics(metrics_dict)
+  reset_metrics(metrics_dict, prom_registry)
 
   for metric_name, query_dict in common.influxqueries.queries.items():
     tables = execute_query(client, query_dict['query'])
