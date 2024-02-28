@@ -1,5 +1,4 @@
 import os
-import json
 import logging
 from datetime import datetime
 from fastapi import FastAPI, Request
@@ -12,8 +11,6 @@ import common.connections as connections
 import common.influxqueries
 from fastapi.responses import Response
 from uvicorn import run
-import requests
-import atexit
 import ssl
 
 """
@@ -75,51 +72,10 @@ def execute_query(client, query):
   except Exception as e:
     logging.exception(f"Error executing InfluxDB query: {str(e)}")
     return None
-
-# def query_and_send(client, metric_name, query, frequency):
-#   """
-#   Schedule and execute a query task.
-
-#   Parameters:
-#   client (InfluxDBClient): The InfluxDB client.
-#   metric_name (str): The name of the metric.
-#   query (str): The query to execute.
-#   frequency (int): The frequency at which to execute the query in minutes.
-#   """
-#   scheduler = BackgroundScheduler()
-#   scheduler.start()
-#   atexit.register(lambda: scheduler.shutdown())
-
-#   def task():
-#     """
-#     The task to execute. This task executes a query, logs the result, sends the result to a URL, and updates a metric.
-#     """
-#     logging.info(f"Running task: {task.__name__}")
-#     tables = execute_query(client, query)
-#     if tables is not None:
-#       logging.info(f"Query result: {tables}")
-#       for table in tables:
-#         for record in table.records:
-#           soapid = record.values.get('soapid', 'default_soapid')
-#           region = record.values.get('region', 'default_region')
-#           _value = record.values.get('_value', 0.0)
-#           if _value is None: # ignore None records
-#               continue
-#           # Update the metrics
-#           if (soapid, region) in metrics_dict:
-#               metrics_dict[metric_name].labels(soapid=soapid, region=region).set(_value)
-#             # metrics_dict[metric_name].labels(labels).set(_value)
-
-#           # Send the data to the specified URL
-#           endpoint = "https://localhost:8000/koshban-trading-metrics"
-#           data = {'value': _value, 'labels': ['soapid', 'region']}
-#           logging.info("Inside task. data is : {data} and JSON format is :", json.dumps(data, indent=4))
-#           if data:
-#             response = requests.post(endpoint, data=json.dumps(data), headers={'Content-Type': 'application/json'})
-#             logging.info(f"Sent data to {endpoint}, received status code: {response.status_code}")
-
-#   scheduler.add_job(task, 'interval', minutes=frequency)
-#   logging.info(f"Scheduled task: {task.__name__} to run every {frequency} minutes")
+  
+def reset_metrics(metrics_dict):
+  for metric_name in metrics_dict:
+    metrics_dict[metric_name].clear()
 
 @app.on_event("startup")
 async def startup():
@@ -138,6 +94,9 @@ async def get_metrics():
   Response: A Response object containing the latest metrics.
   """
   client = InfluxDBClient(connections.influxdbconndetails)
+  # Reset the metrics before fetching new data
+  reset_metrics(metrics_dict)
+
   for metric_name, query_dict in common.influxqueries.queries.items():
     tables = execute_query(client, query_dict['query'])
     if tables is not None:
@@ -164,23 +123,6 @@ async def get_metrics():
   metrics_str = metrics.decode('utf-8')
   logging.info(f"Generated metrics: {metrics_str}")
   return Response(metrics, media_type='text/plain')
-
-# @app.post('/koshban-trading-metrics')
-# async def post_metrics(request: Request, data: dict):
-#   """
-#   Endpoint for posting metrics. This function logs and prints the received data.
-
-#   Parameters:
-#   data (dict): The data received in the POST request.
-
-#   Returns:
-#   str: A message indicating successful receipt of data.
-#   """
-#   client_host = request.client.host
-#   user_agent = request.headers.get('User-Agent')
-#   logging.info(f"Received POST request at /koshban-trading-metrics from {client_host} with User-Agent: {user_agent} and data: {data}")
-#   print(data)
-#   return 'Data received and printed!'
 
 def main():
   """

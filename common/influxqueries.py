@@ -30,8 +30,7 @@ queries = {
                 r._field == "average"
             )
             |> aggregateWindow(every: 3h, fn: mean)
-            |> group(columns: ["_time", "bucketGroup", "stopwatchName"])
-            |> fill(usePrevious: true)
+            |> group(columns: ["_time", "bucketGroup", "stopwatchName"])            
   ''',
         "frequency": 300
     },
